@@ -19,12 +19,17 @@ import java.util.jar.JarException;
 public class HttpClient {
     static Logger logger = Logger.getLogger (HttpClient.class.getName ( ));
     private String baseUri;
-    private String accessToken;
-    private static List <String> list = new ArrayList <> ( );
+    protected String accessToken;
+    DataManager dataManager;
+    //    private static List <String> list = new ArrayList <> ( );
+    public int requestNumber = 0;
+    List <String>  dataList = new ArrayList <> ();
+
 
 
     HttpClient() {
         try {
+            this.dataManager = new DataManager ();
             InputStream inputStream = new FileInputStream (".\\src\\main\\resources\\application.properties");
             Properties properties = new Properties ( );
             properties.load (inputStream);
@@ -36,30 +41,38 @@ public class HttpClient {
         }
     }
 
-    public void get(String uri) throws IOException {
+    public List<String> get(String uri) throws IOException {
         org.apache.http.client.HttpClient client = HttpClientBuilder.create ( ).build ( );
+        List <String>  linkList = new ArrayList <> ();
         HttpGet request = new HttpGet (this.baseUri + uri);
         request.setHeader ("X-Access-Token", accessToken);
         HttpResponse response = client.execute (request);
         if (response.getStatusLine ( ).getStatusCode ( ) == 200) {
             BufferedReader reader = new BufferedReader (new InputStreamReader (response.getEntity ( ).getContent ( )));
-            String text = readStreamFromReader (reader);
+            String text = dataManager.readStreamFromReader (reader);
             String contentType = response.getEntity ( ).getContentType ( ).getValue ( );
             if (contentType.equals ("application/json")) {
-                logger.info ("ContentType : " + contentType);
-                searchJsonKey ("link", JsonParser.parseString (text));
+                if (!uri.equals ("/register")) {
+                    linkList = searchJsonKey ("link", JsonParser.parseString (text), linkList);
+
+                } else {
+                    dataList = searchJsonKey ("access_token", JsonParser.parseString (text), dataList);
+                }
+
+                logger.info ("Content was received from : " + uri + "\n" + text);
+                logger.info ("Element from list : " + Arrays.asList (linkList));
             }
-            logger.info ("Content Was Received \n" + text);
         } else {
-            logger.error ("Http Request Failed with status code : " + response.getStatusLine ( ).getStatusCode ( ));
+            logger.error ("Http Request Failed with status code " + uri + ": " + response.getStatusLine ( ).getStatusCode ( ));
         }
+        return linkList;
     }
 
-    private void searchJsonKey(String key, JsonElement jsonElement) {
+    private List<String> searchJsonKey(String key, JsonElement jsonElement, List <String> list) {
 
         if (jsonElement.isJsonArray ( )) {
             for (JsonElement jsonElement1 : jsonElement.getAsJsonArray ( )) {
-                searchJsonKey (key, jsonElement1);
+                searchJsonKey (key, jsonElement1, list);
             }
         } else {
             if (jsonElement.isJsonObject ( )) {
@@ -77,11 +90,17 @@ public class HttpClient {
                             }
                         } catch (JSONException e) {
                             logger.warn (e.getMessage ( ));
-                            list.add (value.replace ("\"", ""));
+                            if (key.equals ("access_token")) {
+                                accessToken = value.replace ("\"", "");
+                                logger.info ("Access Token Received : " + accessToken);
+                            } else {
+                                list.add (value.replace ("\"", ""));
+                            }
+
                         }
 
                     }
-                    searchJsonKey (key, entry.getValue ( ));
+                    searchJsonKey (key, entry.getValue ( ), list);
                 }
             } else {
                 if (jsonElement.toString ( ).equals (key)) {
@@ -90,16 +109,8 @@ public class HttpClient {
             }
         }
 
-
+return list;
     }
 
-    public String readStreamFromReader(Reader reader) throws IOException {
-        StringBuilder stringBuilder = new StringBuilder ( );
-        int cp;
-        while ((cp = reader.read ( )) != -1) {
-            stringBuilder.append ((char) cp);
-        }
 
-        return stringBuilder.toString ( );
-    }
 }
