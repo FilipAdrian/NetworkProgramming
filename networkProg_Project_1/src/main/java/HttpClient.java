@@ -20,16 +20,13 @@ public class HttpClient {
     static Logger logger = Logger.getLogger (HttpClient.class.getName ( ));
     private String baseUri;
     protected String accessToken;
-    DataManager dataManager;
-    //    private static List <String> list = new ArrayList <> ( );
-    public int requestNumber = 0;
-    List <String>  dataList = new ArrayList <> ();
-
+    private DataManager dataManager;
+    public static List <String> dataList = new ArrayList <> ( );
 
 
     HttpClient() {
         try {
-            this.dataManager = new DataManager ();
+            this.dataManager = new DataManager ( );
             InputStream inputStream = new FileInputStream (".\\src\\main\\resources\\application.properties");
             Properties properties = new Properties ( );
             properties.load (inputStream);
@@ -41,9 +38,9 @@ public class HttpClient {
         }
     }
 
-    public List<String> get(String uri) throws IOException {
+    public List <String> get(String uri) throws IOException {
         org.apache.http.client.HttpClient client = HttpClientBuilder.create ( ).build ( );
-        List <String>  linkList = new ArrayList <> ();
+        List <String> linkList = new ArrayList <> ( );
         HttpGet request = new HttpGet (this.baseUri + uri);
         request.setHeader ("X-Access-Token", accessToken);
         HttpResponse response = client.execute (request);
@@ -56,6 +53,7 @@ public class HttpClient {
                     linkList = searchJsonKey ("link", JsonParser.parseString (text), linkList);
 
                 } else {
+                    linkList = searchJsonKey ("link", JsonParser.parseString (text), linkList);
                     dataList = searchJsonKey ("access_token", JsonParser.parseString (text), dataList);
                 }
 
@@ -68,7 +66,7 @@ public class HttpClient {
         return linkList;
     }
 
-    private List<String> searchJsonKey(String key, JsonElement jsonElement, List <String> list) {
+    private List <String> searchJsonKey(String key, JsonElement jsonElement, List <String> list) {
 
         if (jsonElement.isJsonArray ( )) {
             for (JsonElement jsonElement1 : jsonElement.getAsJsonArray ( )) {
@@ -109,7 +107,7 @@ public class HttpClient {
             }
         }
 
-return list;
+        return list;
     }
 
 

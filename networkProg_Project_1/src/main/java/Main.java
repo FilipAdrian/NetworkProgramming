@@ -16,14 +16,7 @@ public class Main {
     public static void main(String[] args) throws IOException {
         long startTime = System.nanoTime ( );
         logger.info ("== Program Started ==");
-        HttpClient httpClient = new HttpClient ( );
-        httpClient.get ("/register");
-        linkList.addAll (httpClient.get ("/home"));
-        ExecutorService executor = Executors.newCachedThreadPool ( );
-        for (int i = 0; i < linkList.size ( ); i++) {
-            executor.submit (new Task (linkList.get (i),httpClient));
-        }
-        executor.shutdown ();
+        new Request ().initiate ();
 
         logger.info ("== Program Finished ==");
         long endTime = System.nanoTime ( );

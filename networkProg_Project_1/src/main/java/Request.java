@@ -1,44 +1,75 @@
+import org.apache.log4j.Logger;
+
 import java.io.IOException;
+import java.lang.reflect.Array;
+import java.net.BindException;
 import java.util.*;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 
-public class Request extends Thread {
-    private HttpClient httpClient;
+public class Request {
+    static Logger logger = Logger.getLogger (Request.class.getName ( ));
+
+    private static HttpClient httpClient;
     private String uri = "/register";
-    private int index = 0;
+    private static int index = 0;
     private static List <String> linkList = new ArrayList <> ( );
-    Request( ) {
+    private static ExecutorService executor;
+    public boolean isFinished ;
+
+    Request() {
         this.httpClient = new HttpClient ( );
+        this.executor = Executors.newCachedThreadPool ( );
     }
 
     Request(String uri, HttpClient httpClient) {
         this.uri = uri;
         this.httpClient = httpClient;
-
+        this.executor = Executors.newCachedThreadPool ( );
     }
 
-    @Override
-    public void run() {
+    public void initiate() throws IOException {
+        Future future = executor.submit (new Thread (uri));
+//        while (true) {
+//            logger.info ("Is Running");
+//            if (index > 11) {
+//                logger.info ("Finished");
+//                executor.shutdown ( );
+//                isFinished = true;
+//                return;
+//
+//            }
+//        }
+    }
 
-        try {
-            linkList.addAll (httpClient.get (uri));
-            System.out.println (Arrays.asList (linkList) );
-        } catch (IOException e) {
-            e.printStackTrace ( );
+    static class Thread implements Runnable {
+        static Logger logger = Logger.getLogger (Thread.class.getName ( ));
+        private String uri;
+
+
+        Thread(String uri) {
+            this.uri = uri;
+            logger.info (uri);
+
         }
 
+        @Override
+        public void run() {
+            try {
+                linkList.addAll (httpClient.get (uri));
+            } catch (IOException e) {
+                e.printStackTrace ( );
+            }
+            logger.info (index);
 
-//        Collections.reverse (linkList);
-        for (int i = index; i<linkList.size ();i++){
-//            System.out.println ("start" );
-//            System.out.println(Thread.currentThread().getName() + " " + uri  );
-//            HttpClient hc = new HttpClient ();
-//            hc.setAccessToken (httpClient.accessToken);
-            new Request (linkList.get (i),httpClient).start ();
-index++;
-System.out.println ("removed" );
+            for (int i = index; i < linkList.size ( ); i++) {
+                logger.info ("List" + Arrays.asList (linkList));
+                executor.submit (new Thread (linkList.get (i)));
+                index++;
+
+            }
         }
-
     }
 }
