@@ -1,13 +1,15 @@
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.csv.CsvMapper;
+import com.fasterxml.jackson.dataformat.csv.CsvSchema;
 import com.fasterxml.jackson.dataformat.xml.XmlMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 import org.apache.log4j.Logger;
 
 import java.io.IOException;
 import java.io.Reader;
+import java.util.List;
+import java.util.Map;
 
 public class DataManager {
     static Logger logger = Logger.getLogger (DataManager.class.getName ( ));
@@ -25,6 +27,20 @@ public class DataManager {
         return stringBuilder.toString ( );
     }
 
+    public String csvToJson(String csv) {
+        try {
+            CsvSchema csvSchema = CsvSchema.builder ( ).setUseHeader (true).build ( );
+            CsvMapper csvMapper = new CsvMapper ( );
+            List <Object> readAll = null;
+            readAll = csvMapper.readerFor (Map.class).with (csvSchema).readValues (csv).readAll ( );
+            ObjectMapper mapper = new ObjectMapper ( );
+            return mapper.writerWithDefaultPrettyPrinter ( ).writeValueAsString (readAll);
+        } catch (IOException e) {
+            e.printStackTrace ( );
+            return null;
+        }
+    }
+
     public String toJson(String type, String data) throws IOException {
         String json = "";
         ObjectMapper jsonMapper = new ObjectMapper ( );
@@ -39,9 +55,7 @@ public class DataManager {
                 break;
             }
             case "text/csv": {
-                CsvMapper csvMapper = new CsvMapper ( );
-                JsonNode node = csvMapper.readTree (data.getBytes ( ));
-                json = jsonMapper.writeValueAsString (node);
+                json = csvToJson (data);
                 break;
             }
             case "application/x-yaml": {

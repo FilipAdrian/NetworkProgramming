@@ -1,47 +1,48 @@
+import com.google.gson.JsonParser;
 import org.apache.log4j.Logger;
 
 import java.io.IOException;
-import java.lang.reflect.Array;
-import java.net.BindException;
-import java.util.*;
-import java.util.concurrent.ExecutionException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
 
 public class Request {
+    public static List <String> dataList = new ArrayList <> ( );
     static Logger logger = Logger.getLogger (Request.class.getName ( ));
-
     private static HttpClient httpClient;
-    private String uri = "/register";
     private static int index = 0;
     private static List <String> linkList = new ArrayList <> ( );
     private static ExecutorService executor;
-    public boolean isFinished ;
+    private static DataManager dataManager;
+    private String uri = "/register";
 
     Request() {
         this.httpClient = new HttpClient ( );
         this.executor = Executors.newCachedThreadPool ( );
+        this.dataManager = new DataManager ( );
     }
 
     Request(String uri, HttpClient httpClient) {
         this.uri = uri;
         this.httpClient = httpClient;
         this.executor = Executors.newCachedThreadPool ( );
+        this.dataManager = new DataManager ( );
+
     }
 
-    public void initiate() throws IOException {
-        Future future = executor.submit (new Thread (uri));
-//        while (true) {
-//            logger.info ("Is Running");
-//            if (index > 11) {
-//                logger.info ("Finished");
-//                executor.shutdown ( );
-//                isFinished = true;
-//                return;
-//
-//            }
-//        }
+    public boolean initiate() {
+        executor.submit (new Thread (uri));
+        long startTime = System.currentTimeMillis ( );
+        while (true) {
+            long endTime = System.currentTimeMillis ( );
+            long totalTime = endTime - startTime;
+            if (totalTime >= 20000) {
+                executor.shutdown ( );
+                return true;
+            }
+
+        }
     }
 
     static class Thread implements Runnable {
@@ -58,14 +59,22 @@ public class Request {
         @Override
         public void run() {
             try {
-                linkList.addAll (httpClient.get (uri));
+                String result = httpClient.get (uri);
+                httpClient.searchJsonKey ("link", JsonParser.parseString (result), linkList);
+                String data = httpClient.searchKeyValue ("data", result);
+                if (data != null) {
+                    String type = httpClient.searchKeyValue ("mime_type", result);
+                    if (type == null) {
+                        type = "application/json";
+                    }
+                    logger.info ("Result from " + uri + " " + type + " \n" + dataManager.toJson (type, data));
+                    dataList.add (dataManager.toJson (type, data));
+                }
             } catch (IOException e) {
                 e.printStackTrace ( );
             }
-            logger.info (index);
 
             for (int i = index; i < linkList.size ( ); i++) {
-                logger.info ("List" + Arrays.asList (linkList));
                 executor.submit (new Thread (linkList.get (i)));
                 index++;
 
