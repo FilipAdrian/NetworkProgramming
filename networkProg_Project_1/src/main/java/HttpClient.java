@@ -40,7 +40,6 @@ public class HttpClient {
         if (response.getStatusLine ( ).getStatusCode ( ) == 200) {
             BufferedReader reader = new BufferedReader (new InputStreamReader (response.getEntity ( ).getContent ( )));
             text = dataManager.readStreamFromReader (reader);
-            String contentType = response.getEntity ( ).getContentType ( ).getValue ( );
             if (uri.equals ("/register")) {
                 searchJsonKey ("access_token", JsonParser.parseString (text), new ArrayList <> ( ));
             }

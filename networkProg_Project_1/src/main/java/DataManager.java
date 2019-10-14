@@ -4,10 +4,13 @@ import com.fasterxml.jackson.dataformat.csv.CsvMapper;
 import com.fasterxml.jackson.dataformat.csv.CsvSchema;
 import com.fasterxml.jackson.dataformat.xml.XmlMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonParser;
 import org.apache.log4j.Logger;
 
 import java.io.IOException;
 import java.io.Reader;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -72,5 +75,45 @@ public class DataManager {
 
         return json;
     }
+
+    public ArrayList <String> getValuesOfKey(String key, List <String> jsonList) {
+        ArrayList <String> values = new ArrayList <> ( );
+        for (String json : jsonList) {
+            new HttpClient ( ).searchJsonKey (key, JsonParser.parseString (json), values);
+        }
+        return values;
+    }
+
+    public ArrayList <String> getJsonObjectByKeyAndValue(String key, String value, List <String> jsonList) {
+        ArrayList <String> objects = new ArrayList <> ( );
+        for (String obj : jsonList) {
+            JsonElement jsonElement = JsonParser.parseString (obj);
+            if (jsonElement.isJsonArray ( )) {
+                for (JsonElement jsonElement1 : jsonElement.getAsJsonArray ( )) {
+                    if (jsonElement1.isJsonObject ( )) {
+                        {
+                            if (jsonElement1.getAsJsonObject ( ).get (key) != null) {
+                                String val = jsonElement1.getAsJsonObject ( ).get (key).getAsString ( );
+                                if (val.equals (value)) {
+                                    objects.add (jsonElement1.toString ( ));
+                                }
+                            }
+                        }
+                    }
+                }
+            } else {
+                if (jsonElement.isJsonObject ( )) {
+                    if (jsonElement.getAsJsonObject ( ).get (key) != null) {
+                        String val = jsonElement.getAsJsonObject ( ).get (key).getAsString ( );
+                        if (val.equals (value)) {
+                            objects.add (jsonElement.toString ( ));
+                        }
+                    }
+                }
+            }
+        }
+        return objects;
+    }
+
 
 }
