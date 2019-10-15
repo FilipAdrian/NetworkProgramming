@@ -8,11 +8,11 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonParser;
 import org.apache.log4j.Logger;
 
-import java.io.IOException;
-import java.io.Reader;
+import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 
 public class DataManager {
     static Logger logger = Logger.getLogger (DataManager.class.getName ( ));
@@ -113,6 +113,21 @@ public class DataManager {
             }
         }
         return objects;
+    }
+
+    public String getProperty(String property){
+        String value = "";
+        try {
+            InputStream inputStream  = new FileInputStream (".\\src\\main\\resources\\application.properties");
+            Properties properties = new Properties ( );
+            properties.load (inputStream);
+            value = properties.getProperty (property);
+        } catch (FileNotFoundException e) {
+            e.printStackTrace ( );
+        } catch (IOException e) {
+            e.printStackTrace ( );
+        }
+        return value;
     }
 
 

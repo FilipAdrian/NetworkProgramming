@@ -1,15 +1,16 @@
 import org.apache.log4j.Logger;
 
-import java.io.IOException;
+import java.util.Properties;
 
 
 public class Main {
     static Logger logger = Logger.getLogger (Main.class.getName ( ));
-    private static final Integer SERVER_PORT = 6666;
+    private static  Integer SERVER_PORT ;
 
     public static void main(String[] args)  {
         logger.info ("== Program Started ==");
-
+        DataManager dataManager = new DataManager ();
+        SERVER_PORT = Integer.parseInt (dataManager.getProperty ("tcp.server.port"));
         if (new Request ( ).initiate ( )) {
             logger.info ("== All data were collected ==");
         }

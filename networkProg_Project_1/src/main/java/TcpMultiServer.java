@@ -13,9 +13,11 @@ import java.util.regex.Pattern;
 
 public class TcpMultiServer {
     static Logger logger = Logger.getLogger (TcpMultiServer.class.getName ( ));
-    private static final String MAGIC_WORD = "PLEASE";
+    private static String MAGIC_WORD;
     private ServerSocket serverSocket;
-
+    TcpMultiServer(){
+        this.MAGIC_WORD = new DataManager ().getProperty ("tcp.magic.word");
+    }
     public void start(int port) {
         logger.info ("TCP Multi-Server Started");
         try {
@@ -45,16 +47,16 @@ public class TcpMultiServer {
                 in = new BufferedReader (new InputStreamReader (clientSocket.getInputStream ( )));
                 String inputLine;
                 out.println ("Welcome To Adrian TCP Server");
-                out.println ("\t MENU \n1. Enter ALL to see all collected data \n2.Enter which field's values you want to see \n3.Enter STOP to close connection \n ATTENTION: Don't forget the magic word\n");
+                out.println ("\t MENU \n1. Enter ALL to see all collected data \n2.Enter which field's values you want to see \n3.Search which object contain key-value.Please follow the format: KEY IS VALUE \n4.Enter STOP to close connection \n ATTENTION: Don't forget the magic word\n");
                 while ((inputLine = in.readLine ( )) != null) {
-                    if (Pattern.compile (Pattern.quote ("please"), Pattern.CASE_INSENSITIVE).matcher (inputLine).find ( )) {
+                    if (Pattern.compile (Pattern.quote (MAGIC_WORD), Pattern.CASE_INSENSITIVE).matcher (inputLine).find ( )) {
                         inputLine = inputLine.toLowerCase ( );
-                        logger.info ("Magic word exist : " + inputLine);
+                        logger.info ("Magic word exist : ");
                         if (!processInput (inputLine)) {
                             break;
                         }
                     } else {
-                        out.println ("ERROR: MAGIC WORD DOESN'T EXIST");
+                        out.println ("ERROR: MAGIC WORD DOESN'T EXIST. WITHOUT IT I CAN'T DO ANYTHING");
                         logger.error ("MAGIC WORD DOESN'T EXIST");
                     }
 
@@ -73,7 +75,7 @@ public class TcpMultiServer {
 
         private boolean processInput(String input) {
             DataManager dataManager = new DataManager ( );
-            ArrayList <String> words = new ArrayList <String> (Arrays.asList (input.split ("\\W+")));
+            ArrayList <String> words = new ArrayList <> (Arrays.asList (input.split ("\\s+")));
             switch (words.size ( )) {
                 case 2: {
                     if (Pattern.compile (Pattern.quote ("stop"), Pattern.CASE_INSENSITIVE).matcher (input).find ( )) {
@@ -85,14 +87,13 @@ public class TcpMultiServer {
                         }
                     } else {
                         for (String w : words) {
-                            if (!w.equals ("please")) {
+                            if (!w.equals (MAGIC_WORD)) {
                                 List <String> values = dataManager.getValuesOfKey (w, Request.dataList);
-                                if (!values.isEmpty ()) {
+                                if (!values.isEmpty ( )) {
                                     for (String val : values) {
                                         out.println (val);
                                     }
-                                }
-                                else{
+                                } else {
                                     logger.info ("No results found ");
                                     out.println ("WARN: NO RESULTS FOUND \n");
                                 }
@@ -101,7 +102,29 @@ public class TcpMultiServer {
                     }
                     break;
                 }
+                case 4: {
+                    String key = "";
+                    String value = "";
+                    for (int i = 0; i < words.size ( ); i++) {
+                        if (words.get (i).equals ("is")) {
+                            key = words.get (i - 1);
+                            value = words.get (i + 1);
+                        }
+                    }
+                    List <String> results = dataManager.getJsonObjectByKeyAndValue (key, value, Request.dataList);
+                    if (results.isEmpty ( )) {
+                        out.println ("WARN: NO RESULTS FOUND \n");
+                    } else {
+                        for (String rs : results) {
+                            out.println (rs);
+                        }
+                    }
 
+                    break;
+                }
+                default:{
+                    out.println ("ERROR: Such option doesn't exist");
+                }
             }
             return true;
         }

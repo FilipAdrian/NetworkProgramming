@@ -18,17 +18,10 @@ public class HttpClient {
 
 
     HttpClient() {
-        try {
             this.dataManager = new DataManager ( );
-            InputStream inputStream = new FileInputStream (".\\src\\main\\resources\\application.properties");
-            Properties properties = new Properties ( );
-            properties.load (inputStream);
-            this.baseUri = "http://" + properties.getProperty ("http.host") + ":" + properties.getProperty ("http.port");
-        } catch (FileNotFoundException e) {
-            e.printStackTrace ( );
-        } catch (IOException e) {
-            e.printStackTrace ( );
-        }
+            String host = dataManager.getProperty ("http.host");
+            String port = dataManager.getProperty ("http.port");
+            this.baseUri = "http://" + host + ":" + port;
     }
 
     public String get(String uri) throws IOException {
