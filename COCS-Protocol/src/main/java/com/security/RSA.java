@@ -61,6 +61,10 @@ public class RSA {
         return publicSignature.verify(sign);
     }
 
+    public void setPublicKey(String based64PublicKey) {
+        this.publicKey = getPublicKey(based64PublicKey);
+    }
+
     public String decrypt(String encryptedMessage) throws BadPaddingException, IllegalBlockSizeException {
         byte[] message = Base64.getDecoder().decode(encryptedMessage.getBytes());
         Cipher cipher = null;
